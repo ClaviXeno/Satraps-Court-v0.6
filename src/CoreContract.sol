@@ -208,9 +208,7 @@ contract SatrapsCourt is AccessControl {
     /**
      * @dev disable collection from staking and voting
      */
-    function removeCollectionFromDAO(
-        address _collection
-    ) external onlyChairman {
+    function removeCollection(address _collection) external onlyChairman {
         CollectionInfo memory _collectionInfo = collectionToVotingInfo[
             _collection
         ];
@@ -468,7 +466,7 @@ contract SatrapsCourt is AccessControl {
     }
 
     /**
-     * @dev a user can call castVote if they have NFTs submitted to the DAO
+     * @dev a user can call castVote if they have NFTs staked
      */
     function castVote(uint256 _voteOptionId) external {
         SessionInfo memory session = sessions[currentSessionId];
