@@ -12,23 +12,23 @@ interface IDecreeMinter {
     function mint(uint256, string memory) external;
 }
 
-contract CourtDAO is AccessControl {
+contract SatrapsCourt is AccessControl {
     /********************************************************/
     /************************ Errors ************************/
     /********************************************************/
 
-    error CourtDAO__OnlyChairman();
-    error CourtDAO__CollectionExists();
-    error CourtDAO__CollectionNotExists();
-    error CourtDAO__StartTimeError();
-    error CourtDAO__EndTimeError();
-    error CourtDAO__SessionStateError(string reason);
-    error CourtDAO__VoteOptionsNotSet();
-    error CourtDAO__VoteOptionNotExists();
-    error CourtDAO__VoteOptionRemoved();
-    error CourtDAO__NoVotingPower(string reason);
-    error CourtDAO__ZeroAddress();
-    error CourtDAO__AlreadyVoted();
+    error SatrapsCourt__OnlyChairman();
+    error SatrapsCourt__CollectionExists();
+    error SatrapsCourt__CollectionNotExists();
+    error SatrapsCourt__StartTimeError();
+    error SatrapsCourt__EndTimeError();
+    error SatrapsCourt__SessionStateError(string reason);
+    error SatrapsCourt__VoteOptionsNotSet();
+    error SatrapsCourt__VoteOptionNotExists();
+    error SatrapsCourt__VoteOptionRemoved();
+    error SatrapsCourt__NoVotingPower(string reason);
+    error SatrapsCourt__ZeroAddress();
+    error SatrapsCourt__AlreadyVoted();
 
     /********************************************************/
     /************************ Types *************************/
@@ -140,7 +140,7 @@ contract CourtDAO is AccessControl {
     /*********************** Modifier ***********************/
     /********************************************************/
     modifier onlyChairman() {
-        if (msg.sender != chairman) revert CourtDAO__OnlyChairman();
+        if (msg.sender != chairman) revert SatrapsCourt__OnlyChairman();
 
         _;
     }
@@ -182,7 +182,7 @@ contract CourtDAO is AccessControl {
     /**
      * @dev adds new collection to staking and voting
      */
-    function addCollectionToDAO(
+    function addCollection(
         address _collection,
         uint256 _votePower
     ) external onlyChairman {
@@ -190,7 +190,8 @@ contract CourtDAO is AccessControl {
             _collection
         ];
 
-        if (_collectionInfo.isAccpetable) revert CourtDAO__CollectionExists();
+        if (_collectionInfo.isAccpetable)
+            revert SatrapsCourt__CollectionExists();
         uint256 lastIndex = acceptedCollections.length;
 
         acceptedCollections.push(_collection);
@@ -214,7 +215,7 @@ contract CourtDAO is AccessControl {
             _collection
         ];
         if (!_collectionInfo.isAccpetable)
-            revert CourtDAO__CollectionNotExists();
+            revert SatrapsCourt__CollectionNotExists();
 
         delete collectionToVotingInfo[_collection];
         delete acceptedCollections[_collectionInfo.indexInCollectionsArray];
@@ -237,7 +238,7 @@ contract CourtDAO is AccessControl {
         SessionInfo memory currentSession = sessions[currentSessionId];
 
         if (currentSession.state != SessionState.OPEN)
-            revert CourtDAO__SessionStateError("Session in progress");
+            revert SatrapsCourt__SessionStateError("Session in progress");
 
         uint256 lastOptionIndex = currentSession.voteOptionsCount;
 
@@ -268,15 +269,16 @@ contract CourtDAO is AccessControl {
     function removeVoteOption(uint256 _voteOptionId) external onlyChairman {
         SessionInfo memory currentSession = sessions[currentSessionId];
         if (_voteOptionId > currentSession.voteOptionsCount)
-            revert CourtDAO__VoteOptionNotExists();
+            revert SatrapsCourt__VoteOptionNotExists();
 
         if (currentSession.state != SessionState.OPEN)
-            revert CourtDAO__SessionStateError("session is in progress");
+            revert SatrapsCourt__SessionStateError("session is in progress");
 
         VoteOptionInfo memory sessionVoteOptions = sessionToVoteOptionsInfo[
             currentSessionId
         ][_voteOptionId];
-        if (!sessionVoteOptions.isActive) revert CourtDAO__VoteOptionRemoved();
+        if (!sessionVoteOptions.isActive)
+            revert SatrapsCourt__VoteOptionRemoved();
         delete sessionToVoteOptionsInfo[currentSessionId][_voteOptionId];
         emit VoteOptionsRemoved(currentSessionId, _voteOptionId);
     }
@@ -293,17 +295,17 @@ contract CourtDAO is AccessControl {
         string memory _sessionTitle,
         bool _isStatement // chairman input (newly added)
     ) external onlyChairman {
-        if (_startTime < block.timestamp) revert CourtDAO__StartTimeError();
-        if (_endTime < _startTime) revert CourtDAO__EndTimeError();
+        if (_startTime < block.timestamp) revert SatrapsCourt__StartTimeError();
+        if (_endTime < _startTime) revert SatrapsCourt__EndTimeError();
 
         SessionInfo memory currentSession = sessions[currentSessionId];
         if (currentSession.state != SessionState.OPEN)
-            revert CourtDAO__SessionStateError(
+            revert SatrapsCourt__SessionStateError(
                 "Session is already in progress"
             );
 
         if (currentSession.voteOptionsCount == 0)
-            revert CourtDAO__VoteOptionsNotSet();
+            revert SatrapsCourt__VoteOptionsNotSet();
 
         currentSession.sessionStartTime = _startTime;
         currentSession.sessionEndTime = _endTime;
@@ -332,7 +334,7 @@ contract CourtDAO is AccessControl {
         ];
 
         if (session.sessionEndTime > block.timestamp)
-            revert CourtDAO__SessionStateError("Session is in progress");
+            revert SatrapsCourt__SessionStateError("Session is in progress");
 
         sessions[currentSessionId].state = SessionState.ENDED;
         uint lastSessionId = currentSessionId;
@@ -430,12 +432,12 @@ contract CourtDAO is AccessControl {
 
     function delegateVotePower(address delegateeAddress) external {
         Voter memory _voter = voters[msg.sender];
-        if (_voter.votePower == 0) revert CourtDAO__NoVotingPower("");
+        if (_voter.votePower == 0) revert SatrapsCourt__NoVotingPower("");
 
-        if (delegateeAddress == address(0)) revert CourtDAO__ZeroAddress();
+        if (delegateeAddress == address(0)) revert SatrapsCourt__ZeroAddress();
 
         if (sessionIdToVoterVotedStatus[currentSessionId][msg.sender])
-            revert CourtDAO__AlreadyVoted();
+            revert SatrapsCourt__AlreadyVoted();
 
         /**
          * @notice Caution: delegator will lose the chance to vote for the session if the delegatee is already voted before delegation
@@ -452,7 +454,7 @@ contract CourtDAO is AccessControl {
 
     function revokeDelegateVotePower() external {
         Voter memory _voter = voters[msg.sender];
-        if (_voter.delegate == address(0)) revert CourtDAO__ZeroAddress();
+        if (_voter.delegate == address(0)) revert SatrapsCourt__ZeroAddress();
 
         address delegate = _voter.delegate;
         if (sessionIdToVoterVotedStatus[currentSessionId][delegate]) {
@@ -474,26 +476,26 @@ contract CourtDAO is AccessControl {
             currentSessionId
         ];
         if (session.state != SessionState.IN_PROGRESS)
-            revert CourtDAO__StartTimeError();
+            revert SatrapsCourt__StartTimeError();
         if (block.timestamp > session.sessionEndTime)
-            revert CourtDAO__EndTimeError();
+            revert SatrapsCourt__EndTimeError();
 
         Voter memory _voter = voters[msg.sender];
 
-        if (_voter.votePower == 0) revert CourtDAO__NoVotingPower("");
+        if (_voter.votePower == 0) revert SatrapsCourt__NoVotingPower("");
 
         if (sessionIdToVoterVotedStatus[currentSessionId][msg.sender])
-            revert CourtDAO__AlreadyVoted();
+            revert SatrapsCourt__AlreadyVoted();
 
         sessionIdToVoterVotedStatus[currentSessionId][msg.sender] = true;
 
         if (
             _voteOptionId > session.voteOptionsCount ||
             !_optionsInfo[_voteOptionId].isActive
-        ) revert CourtDAO__VoteOptionNotExists();
+        ) revert SatrapsCourt__VoteOptionNotExists();
 
         if (_voter.delegate != address(0))
-            revert CourtDAO__NoVotingPower("Can't vote: delegated nft");
+            revert SatrapsCourt__NoVotingPower("Can't vote: delegated nft");
 
         sessionToVoteOptionsInfo[currentSessionId][_voteOptionId]
             .optionVotes += _voter.votePower;
@@ -518,10 +520,10 @@ contract CourtDAO is AccessControl {
         Voter memory _voter = voters[msg.sender];
 
         if (!_collectionInfo.isAccpetable)
-            revert CourtDAO__CollectionNotExists();
+            revert SatrapsCourt__CollectionNotExists();
 
         if (_voter.delegate != address(0))
-            revert CourtDAO__NoVotingPower("delegated vote power");
+            revert SatrapsCourt__NoVotingPower("delegated vote power");
 
         mapping(uint => address)
             storage tokenIdToOwner = collectionTokenIdOwner[_collection];
@@ -561,7 +563,7 @@ contract CourtDAO is AccessControl {
 
         // if last session is ended and next session is not yet started a user can unstake NFTs
         if (currentSession.state != SessionState.OPEN)
-            revert CourtDAO__SessionStateError("Session Not Ended");
+            revert SatrapsCourt__SessionStateError("Session Not Ended");
 
         uint256[] memory _tokenIds = ownerToCollectionIdssStaked[msg.sender][
             _collection
@@ -620,7 +622,7 @@ contract CourtDAO is AccessControl {
         uint256 _sessionId
     ) external view returns (SessionInfo memory) {
         if (_sessionId > currentSessionId)
-            revert CourtDAO__SessionStateError("Session not started");
+            revert SatrapsCourt__SessionStateError("Session not started");
         return sessions[_sessionId];
     }
 
@@ -645,7 +647,7 @@ contract CourtDAO is AccessControl {
         uint256 _sessionId
     ) external view returns (VoteOptionInfo[] memory) {
         if (_sessionId > currentSessionId)
-            revert CourtDAO__SessionStateError("Session not started");
+            revert SatrapsCourt__SessionStateError("Session not started");
         return sessionToVoteOptionsInfo[_sessionId];
     }
 
@@ -653,7 +655,7 @@ contract CourtDAO is AccessControl {
         uint256 _sessionId
     ) external view returns (WinningVoteOption memory) {
         if (sessions[_sessionId].state != SessionState.ENDED)
-            revert CourtDAO__SessionStateError("Session not ended");
+            revert SatrapsCourt__SessionStateError("Session not ended");
         return sessionToWinningVoteOption[_sessionId];
     }
 
