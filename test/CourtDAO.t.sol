@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import {Test, console} from "forge-std/Test.sol";
 import {MockERC721} from "../src/mock/mockERC721.sol";
-import {CourtDAO} from "../src/CoreContract.sol";
+import {SatrapsCourt} from "../src/CoreContract.sol";
 import {DecreeMinter} from "../src/DecreeMinter.sol";
 import {StatementMinter} from "../src/StatementMinter.sol";
 
-contract CourtDAOTest is Test {
-    CourtDAO courtDAO;
+contract SatrapsCourtTest is Test {
+    SatrapsCourt satrapsCourt;
     DecreeMinter decreeMinter;
     StatementMinter statementMinter;
     MockERC721 collectionZero;
@@ -36,7 +36,7 @@ contract CourtDAOTest is Test {
     function setUp() public {
         decreeMinter = new DecreeMinter(chairman);
         statementMinter = new StatementMinter(chairman);
-        courtDAO = new CourtDAO(
+        satrapsCourt = new SatrapsCourt(
             address(statementMinter),
             address(decreeMinter)
         );
@@ -46,33 +46,33 @@ contract CourtDAOTest is Test {
             collectionZeroSymbol
         );
         collectionOne = new MockERC721(collectionOneName, collectionOneSymbol);
-        courtDAO.changeChairman(chairman);
+        satrapsCourt.changeChairman(chairman);
 
         // grant DEFAULT ADMIN ROLE to new chairman
-        courtDAO.grantRole(courtDAO.DEFAULT_ADMIN_ROLE(), chairman);
+        satrapsCourt.grantRole(satrapsCourt.DEFAULT_ADMIN_ROLE(), chairman);
     }
 
     /***************************************************/
 
-    function setupCourtDAOSession() private {
+    function setupSatrapsCourtSession() private {
         string[] memory optionsInfo = new string[](2);
         optionsInfo[0] = "test opt1";
         optionsInfo[1] = "test opt1";
         vm.startPrank(chairman);
 
         // step 0: add collections
-        courtDAO.addCollectionToDAO(address(collectionZero), VOTE_POWER);
-        courtDAO.addCollectionToDAO(address(collectionOne), VOTE_POWER * 2);
+        satrapsCourt.addCollection(address(collectionZero), VOTE_POWER);
+        satrapsCourt.addCollection(address(collectionOne), VOTE_POWER * 2);
 
         // step 1: add voting options
-        courtDAO.addVotingOptions(optionsInfo);
+        satrapsCourt.addVotingOptions(optionsInfo);
 
         // step 2: create voting session
         uint256 startTime = block.timestamp + 200;
         uint256 endTime = block.timestamp + 2000;
         string memory sessionTitle = "test session";
         bool isStatement = false;
-        courtDAO.startVotingSession(
+        satrapsCourt.startVotingSession(
             startTime,
             endTime,
             sessionTitle,
@@ -108,35 +108,35 @@ contract CourtDAOTest is Test {
 
     function test__changeChairman() public {
         vm.prank(chairman);
-        courtDAO.changeChairman(chairman2);
-        assert(courtDAO.chairman() == chairman2);
+        satrapsCourt.changeChairman(chairman2);
+        assert(satrapsCourt.chairman() == chairman2);
     }
 
-    function test__addCollectionToDAO() public {
-        vm.expectEmit(true, false, false, false, address(courtDAO));
+    function test__addCollection() public {
+        vm.expectEmit(true, false, false, false, address(satrapsCourt));
         emit AddedCollection(address(collectionOne));
 
         vm.prank(chairman);
-        courtDAO.addCollectionToDAO(address(collectionOne), VOTE_POWER);
+        satrapsCourt.addCollection(address(collectionOne), VOTE_POWER);
 
-        CourtDAO.CollectionInfo memory _collectionInfo = courtDAO
+        SatrapsCourt.CollectionInfo memory _collectionInfo = satrapsCourt
             .getCollectionToVotingInfo(address(collectionOne));
 
         assert(_collectionInfo.isAccpetable);
         assert(_collectionInfo.votePower == VOTE_POWER);
     }
 
-    function test__removeCollectionFromDAO() public {
+    function test__removeCollection() public {
         vm.prank(chairman);
-        courtDAO.addCollectionToDAO(address(collectionOne), VOTE_POWER);
+        satrapsCourt.addCollection(address(collectionOne), VOTE_POWER);
 
-        vm.expectEmit(true, false, false, false, address(courtDAO));
+        vm.expectEmit(true, false, false, false, address(satrapsCourt));
         emit RemovedCollection(address(collectionOne));
 
         vm.prank(chairman);
-        courtDAO.removeCollectionFromDAO(address(collectionOne));
+        satrapsCourt.removeCollection(address(collectionOne));
 
-        CourtDAO.CollectionInfo memory _collectionInfo = courtDAO
+        SatrapsCourt.CollectionInfo memory _collectionInfo = satrapsCourt
             .getCollectionToVotingInfo(address(collectionOne));
 
         assert(!_collectionInfo.isAccpetable);
@@ -148,7 +148,7 @@ contract CourtDAOTest is Test {
         optionsInfo[1] = "test opt1";
 
         vm.prank(chairman);
-        courtDAO.addVotingOptions(optionsInfo);
+        satrapsCourt.addVotingOptions(optionsInfo);
     }
 
     function test__addVotingOptions() public {
@@ -157,7 +157,7 @@ contract CourtDAOTest is Test {
         optionsInfo[1] = "test opt1";
 
         addOptions();
-        CourtDAO.VoteOptionInfo[] memory actualOptions = courtDAO
+        SatrapsCourt.VoteOptionInfo[] memory actualOptions = satrapsCourt
             .getVoteOptionsForSessionId();
 
         for (uint256 i = 0; i < actualOptions.length; i++) {
@@ -173,9 +173,9 @@ contract CourtDAOTest is Test {
         uint256 optionIdToRemove = 0;
 
         vm.prank(chairman);
-        courtDAO.removeVoteOption(optionIdToRemove);
+        satrapsCourt.removeVoteOption(optionIdToRemove);
 
-        CourtDAO.VoteOptionInfo[] memory actualOptions = courtDAO
+        SatrapsCourt.VoteOptionInfo[] memory actualOptions = satrapsCourt
             .getVoteOptionsForSessionId();
 
         assert(!actualOptions[optionIdToRemove].isActive);
@@ -190,29 +190,31 @@ contract CourtDAOTest is Test {
         bool isStatement = false;
 
         vm.prank(chairman);
-        courtDAO.startVotingSession(
+        satrapsCourt.startVotingSession(
             startTime,
             endTime,
             sessionTitle,
             isStatement
         );
-        uint256 sessionId = courtDAO.currentSessionId();
-        CourtDAO.SessionInfo memory actualSessionInfo = courtDAO
+        uint256 sessionId = satrapsCourt.currentSessionId();
+        SatrapsCourt.SessionInfo memory actualSessionInfo = satrapsCourt
             .getSessionInfoById(sessionId);
 
         assert(actualSessionInfo.sessionStartTime == startTime);
         assert(actualSessionInfo.sessionEndTime == endTime);
 
-        assert(actualSessionInfo.state == CourtDAO.SessionState.IN_PROGRESS);
+        assert(
+            actualSessionInfo.state == SatrapsCourt.SessionState.IN_PROGRESS
+        );
     }
 
     function stakeNFTsFromUserOne() internal {
         uint256[] memory tokenIdsToStake = new uint256[](1);
         tokenIdsToStake[0] = 0;
         vm.startPrank(userOne);
-        collectionZero.setApprovalForAll(address(courtDAO), true);
+        collectionZero.setApprovalForAll(address(satrapsCourt), true);
 
-        courtDAO.stakeNFTs(address(collectionZero), tokenIdsToStake);
+        satrapsCourt.stakeNFTs(address(collectionZero), tokenIdsToStake);
         vm.stopPrank();
     }
 
@@ -220,18 +222,18 @@ contract CourtDAOTest is Test {
         uint256[] memory tokenIdsToStake = new uint256[](1);
         tokenIdsToStake[0] = 1;
         vm.startPrank(userTwo);
-        collectionZero.setApprovalForAll(address(courtDAO), true);
+        collectionZero.setApprovalForAll(address(satrapsCourt), true);
 
-        courtDAO.stakeNFTs(address(collectionZero), tokenIdsToStake);
+        satrapsCourt.stakeNFTs(address(collectionZero), tokenIdsToStake);
         vm.stopPrank();
     }
 
     function test__stakeNFTs() public {
-        setupCourtDAOSession();
+        setupSatrapsCourtSession();
         stakeNFTsFromUserOne();
 
         uint256 expectedVotingPower = 100;
-        CourtDAO.Voter memory _userOne = courtDAO.getVoterInfo(userOne);
+        SatrapsCourt.Voter memory _userOne = satrapsCourt.getVoterInfo(userOne);
         assert(_userOne.votePower == expectedVotingPower);
     }
 
@@ -239,75 +241,73 @@ contract CourtDAOTest is Test {
         uint256 endTime = block.timestamp + 3000;
         skip(endTime);
         vm.prank(chairman);
-        courtDAO.finalizeCurrentVotingSession();
+        satrapsCourt.finalizeCurrentVotingSession();
     }
 
     function test__finalizeCurrentVotingSession() public {
-        setupCourtDAOSession();
-        uint256 currentSessionId = courtDAO.currentSessionId();
+        setupSatrapsCourtSession();
+        uint256 currentSessionId = satrapsCourt.currentSessionId();
 
         stakeNFTsFromUserOne();
         uint256 votingOption = 0;
         vm.prank(userOne);
-        courtDAO.castVote(votingOption);
+        satrapsCourt.castVote(votingOption);
 
         finalizeCurrentVotingSession();
-        CourtDAO.SessionInfo memory session = courtDAO.getSessionInfoById(
-            currentSessionId
-        );
+        SatrapsCourt.SessionInfo memory session = satrapsCourt
+            .getSessionInfoById(currentSessionId);
 
-        CourtDAO.WinningVoteOption memory winningOption = courtDAO
+        SatrapsCourt.WinningVoteOption memory winningOption = satrapsCourt
             .getWinningOptionForSession(0);
         assert(!winningOption.isTie);
-        assert(courtDAO.currentSessionId() == currentSessionId + 1);
-        assert(session.state == CourtDAO.SessionState.ENDED);
+        assert(satrapsCourt.currentSessionId() == currentSessionId + 1);
+        assert(session.state == SatrapsCourt.SessionState.ENDED);
     }
 
     function test__finalizeCurrentVotingSessionWitTie() public {
-        setupCourtDAOSession();
-        uint256 currentSessionId = courtDAO.currentSessionId();
+        setupSatrapsCourtSession();
+        uint256 currentSessionId = satrapsCourt.currentSessionId();
 
         stakeNFTsFromUserOne();
         stakeNFTsFromUserTwo();
         uint256 optionOne = 0;
         uint256 optionTwo = 1;
         vm.prank(userOne);
-        courtDAO.castVote(optionOne);
+        satrapsCourt.castVote(optionOne);
 
         vm.prank(userTwo);
-        courtDAO.castVote(optionTwo);
+        satrapsCourt.castVote(optionTwo);
 
         finalizeCurrentVotingSession();
-        CourtDAO.SessionInfo memory session = courtDAO.getSessionInfoById(
-            currentSessionId
-        );
+        SatrapsCourt.SessionInfo memory session = satrapsCourt
+            .getSessionInfoById(currentSessionId);
 
-        CourtDAO.WinningVoteOption memory winningOption = courtDAO
+        SatrapsCourt.WinningVoteOption memory winningOption = satrapsCourt
             .getWinningOptionForSession(0);
 
         assert(winningOption.isTie);
-        assert(courtDAO.currentSessionId() == currentSessionId + 1);
-        assert(session.state == CourtDAO.SessionState.ENDED);
+        assert(satrapsCourt.currentSessionId() == currentSessionId + 1);
+        assert(session.state == SatrapsCourt.SessionState.ENDED);
     }
 
     function test__unstakeNFTs() public {
-        setupCourtDAOSession();
+        setupSatrapsCourtSession();
 
         stakeNFTsFromUserOne();
         finalizeCurrentVotingSession();
 
         vm.prank(userOne);
-        courtDAO.unstakeNFTs(address(collectionZero));
+        satrapsCourt.unstakeNFTs(address(collectionZero));
 
         assert(collectionZero.ownerOf(0) == userOne);
     }
 
     function test__grantOfficerRole() public {
-        address _chairman = courtDAO.chairman();
+        address _chairman = satrapsCourt.chairman();
 
         vm.prank(_chairman);
-        courtDAO.grantRole(OFFICER, officer);
+        satrapsCourt.grantRole(OFFICER, officer);
 
-        assert(courtDAO.hasRole(OFFICER, officer));
+        assert(satrapsCourt.hasRole(OFFICER, officer));
     }
 }

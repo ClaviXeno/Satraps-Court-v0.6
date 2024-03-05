@@ -4,6 +4,9 @@ pragma solidity ^0.8.18;
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 
+/// @title Satraps Court - v0.6.0
+/// @author Clavi
+
 interface IStatementMinter {
     function mint(uint256, string memory) external;
 }
@@ -392,7 +395,8 @@ contract SatrapsCourt is AccessControl {
     /******************* Mint Functions *********************/
     /********************************************************/
     /**
-     * @dev OnlyRole is a modifier by thirdweb's permissions extension, it gives an array of wallet addresses permission to call the mint function
+     * @dev the following mint functions call the corresponding minter modules.
+     * @dev the mintStatement function can only be called by the OFFICER role - roles are granted by Chairman/contract owner.
      */
     function mintStatement(
         uint256 sessionId,
@@ -679,6 +683,6 @@ contract SatrapsCourt is AccessControl {
     /******************* Notes for future *******************/
     /********************************************************/
 
-    //For future upgrades of court, deploy the new verison of court with sessionId starting from [currentSessionId + 1] of the last implementation.
-    //hypothetical: for data retrieval, future upgrades can source historical session data from the older smart contract. (if _sessionid < newImplementationStartingSessionId, then call old implementation's getSessionInfoById function).
+    //*Author: For future upgrades of court, deploy the new verison of court with sessionId starting from [currentSessionId + 1] of the last implementation.
+    //**hypothetical: for data retrieval and accessibility, future upgrades can source historical session data from the older smart contract. (if _sessionid < newImplementationStartingSessionId, then call old implementation's getSessionInfoById function).
 }
