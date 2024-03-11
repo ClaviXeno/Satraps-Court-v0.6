@@ -44,6 +44,8 @@ The Satraps Court smart contract is a decentralized governance platform designed
 1. **Setting Core Address**: Call the `setCore` function to set the address of the core contract.
 2. **Session Management**: Retrieve session IDs associated with minted tokens using the `getSessionId` function.
 
+---
+
 ## Notes
 
 - Future upgrades of the contract should be deployed with session IDs starting from the last implementation's `currentSessionId + 1`.
@@ -77,6 +79,8 @@ For any questions, support, or inquiries, please contact the author or raise an 
 ## Acknowledgments
 
 Special thanks to Thirdweb, Foundry, and OpenZeppelin for providing tools and foundational contracts used in this project.
+
+---
 
 ## Foundry
 
