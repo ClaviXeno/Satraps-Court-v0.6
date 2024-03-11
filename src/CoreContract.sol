@@ -231,6 +231,7 @@ contract SatrapsCourt is AccessControl {
 
     /**
      * @dev adds voting options to current session if it is not in progress
+     * @dev modifier onlyChairman is for testing phase. Production phase will have OFFICER role as modifier.
      * @param _optionsInfo is voting options.
      */
     function addVotingOptions(
@@ -265,6 +266,7 @@ contract SatrapsCourt is AccessControl {
 
     /**
      * @dev Removes voting option from current session if it is not in progress
+     * @dev modifier onlyChairman is for testing phase. Production phase will have OFFICER role as modifier.
      * @param _voteOptionId is voting optionId to remove.
      */
     function removeVoteOption(uint256 _voteOptionId) external onlyChairman {
@@ -286,6 +288,7 @@ contract SatrapsCourt is AccessControl {
 
     /**
      * @dev starts a new session if current session is not in progress
+     * @dev modifier onlyChairman is for testing phase. Production phase will have OFFICER role as modifier.
      * @param _startTime is session start time
      * @param _endTime is session end time
      * @param _sessionTitle is session title
@@ -327,6 +330,9 @@ contract SatrapsCourt is AccessControl {
         );
     }
 
+    /**
+     * @dev only the chairman can finalize the current voting session.
+     */
     function finalizeCurrentVotingSession() external onlyChairman {
         SessionInfo memory session = sessions[currentSessionId];
 
@@ -412,6 +418,10 @@ contract SatrapsCourt is AccessControl {
 
         IStatementMinter(statementMinter).mint(sessionId, uri);
     }
+
+    /**
+     * @dev the mintDecree function can only be called by the Chairman role.
+     */
 
     function mintDecree(
         uint256 sessionId,
