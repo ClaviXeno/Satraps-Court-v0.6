@@ -14,7 +14,6 @@ The Satraps Court smart contract is a decentralized governance platform designed
 
 ## Dependencies
 
-- OpenZeppelin's ERC721 contract (`IERC721.sol`)
 - OpenZeppelin's AccessControl contract (`AccessControl.sol`)
 - OpenZeppelin's ERC721 interface contract (`IERC721.sol`)
 - OpenZeppelin's ERC721 contract (`ERC721.sol`)
